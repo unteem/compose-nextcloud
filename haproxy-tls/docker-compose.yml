@@ -2,21 +2,21 @@ version: '3'
 
 services:
   db:
-    image: mariadb:${MYSQL_VERSION}
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    image: mariadb:${mysql_version}
+    command: --transaction-isolation=read-committed --binlog-format=row
     restart: always
     volumes:
       - db:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD
-      - MYSQL_USER
-      - MYSQL_PASSWORD
-      - MYSQL_DATABASE
+      - mysql_root_password
+      - mysql_user
+      - mysql_password
+      - mysql_database
     networks:
       - back
 
   app:
-    image: nextcloud:${NEXTCLOUD_VERSION}
+    image: nextcloud:${nextcloud_version}
     restart: always
     volumes:
       - nextcloud:/var/www/html
@@ -24,15 +24,15 @@ services:
       - config:/var/www/html/config
       - data:/var/www/html/data
     environment:
-      - MYSQL_DATABASE
-      - MYSQL_HOST
-      - MYSQL_USER
-      - MYSQL_PASSWORD
-      - REDIS_HOST
-      - SMTP_HOST
-      - SMTP_SECURE
-      - SMTP_PORT
-      - SMTP_AUTHTYPE
+      - mysql_database
+      - mysql_host
+      - mysql_user
+      - mysql_password
+      - redis_host
+      - smtp_host
+      - smtp_secure
+      - smtp_port
+      - smtp_authtype
       - SMTP_NAME
       - SMTP_PASSWORD
       - MAIL_FROM_ADDRESS
@@ -102,7 +102,7 @@ services:
       - lb_web
 
   letsencrypt-web:
-    image: nginx
+    image: nginx:${NGINX_VERSION}
     volumes:
       - ./acme-challenge:/usr/share/nginx/html/.well-known/acme-challenge:ro
     networks:

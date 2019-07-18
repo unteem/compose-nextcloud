@@ -24,6 +24,9 @@ cp env-sample .env
 ```
 Change the env variables to your needs
 
+Configure network and start the app
+Proxy and front are on the lb_web network, haproxy will update its config when a container is added on the lb_web network
+
 ```
 docker network create lb_web
 docker-compose up -d
