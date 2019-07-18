@@ -1,0 +1,137 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb:${MYSQL_VERSION}
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_DATABASE
+    networks:
+      - back
+
+  app:
+    image: nextcloud:${NEXTCLOUD_VERSION}
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html
+      - apps:/var/www/html/custom_apps
+      - config:/var/www/html/config
+      - data:/var/www/html/data
+    environment:
+      - MYSQL_DATABASE
+      - MYSQL_HOST
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - REDIS_HOST
+      - SMTP_HOST
+      - SMTP_SECURE
+      - SMTP_PORT
+      - SMTP_AUTHTYPE
+      - SMTP_NAME
+      - SMTP_PASSWORD
+      - MAIL_FROM_ADDRESS
+      - MAIL_DOMAIN
+      - NEXTCLOUD_TRUSTED_DOMAINS
+      - NEXTCLOUD_ADMIN_USER
+      - NEXTCLOUD_ADMIN_PASSWORD
+    depends_on:
+      - db
+      - redis
+    networks:
+      - back
+
+  redis:
+    image: redis:${REDIS_VERSION}
+    restart: always
+    networks:
+      - back
+
+  cron:
+    image: nextcloud:${NEXTCLOUD_VERSION}
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html
+    user: www-data
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+    networks:
+      - back
+
+  web:
+    image: nginx:${NGINX_VERSION}
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nextcloud:/var/www/html:ro
+    environment:
+      - VIRTUAL_HOST
+    depends_on:
+      - app
+    networks:
+      - back
+      - lb_web
+
+  discovery:
+    image: jwilder/docker-gen
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./templates:/etc/docker-gen/templates
+      - ./conf:/etc/haproxy
+    command: "-watch /etc/docker-gen/templates/haproxy.cfg.tmpl /etc/haproxy/haproxy.cfg"
+
+  haproxy:
+    build:
+      context: ./docker/haproxy
+    volumes:
+      - ./conf:/etc/haproxy
+      - /dev/log:/dev/log
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - discovery
+    networks:
+      - lb_web
+
+  letsencrypt-web:
+    image: nginx
+    volumes:
+      - ./acme-challenge:/usr/share/nginx/html/.well-known/acme-challenge:ro
+    networks:
+      - lb_web
+
+  letsencrypt:
+    build:
+      context: ./docker/letsencrypt
+    volumes:
+      - ./conf:/etc/haproxy
+      - ./acme-challenge:/html-root/.well-known/acme-challenge/
+      - ./certs:/var/certs
+    depends_on:
+      - haproxy
+
+  ocsp:
+    build:
+      context: ./docker/ocsp
+    volumes:
+      - ./conf:/etc/haproxy
+
+volumes:
+  db:
+  nextcloud:
+  apps:
+  config:
+  data:
+
+networks:
+  back:
+  lb_web:
+    external: true
