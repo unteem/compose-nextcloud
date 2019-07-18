@@ -34,7 +34,7 @@ docker-compose up -d
 For more information on the configuration, check [nextcloud doc](https://docs.nextcloud.com/server/14/admin_manual/configuration_server/index.html) and for auto-configuration with env variables[docker-nextcloud doc](https://github.com/nextcloud/docker#auto-configuration-via-environment-variables)
 
 ### Persistence
-The following folders needs to be mounted as volume in order to persist data
+The following folders needs to be mounted as volume in order to persist data for nextcloud
 
 ```
 nextcloud:/var/www/html
@@ -42,5 +42,30 @@ apps:/var/www/html/custom_apps
 config:/var/www/html/config
 data:/var/www/html/data
 ```
+For mariadb:
+```
+/var/lib/mysql
+```
+### Log rotation
+
+For log rotation you can use logrotate
+
+Example:
+configure  `/etc/logrotate.d/docker-container` with:
+
+```
+/var/lib/docker/containers/*/*.log {
+  rotate 7
+  daily
+  compress
+  size=1M
+  missingok
+  delaycompress
+  copytruncate
+}
+```
+
+*We recommand to use tools such as flutend or ELK stack*
+
 ### Backup
 In order to backup, just run the ./pre-backup script. And copy all the data to a safe place.
