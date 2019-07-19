@@ -56,7 +56,7 @@ services:
     image: nextcloud:${NEXTCLOUD_VERSION}
     restart: always
     volumes:
-      - nextcloud:/var/www/html
+      - /data/nextcloud:/var/www/html
     user: www-data
     entrypoint: /cron.sh
     depends_on:
