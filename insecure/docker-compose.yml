@@ -6,7 +6,7 @@ services:
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
     restart: always
     volumes:
-      - db:/var/lib/mysql
+      - /data/db:/var/lib/mysql
     environment:
       - MYSQL_ROOT_PASSWORD
       - MYSQL_USER
@@ -19,10 +19,10 @@ services:
     image: nextcloud:${NEXTCLOUD_VERSION}
     restart: always
     volumes:
-      - nextcloud:/var/www/html
-      - apps:/var/www/html/custom_apps
-      - config:/var/www/html/config
-      - data:/var/www/html/data
+      - /data/nextcloud:/var/www/html
+      - /data/apps:/var/www/html/custom_apps
+      - /data/config:/var/www/html/config
+      - /data/data:/var/www/html/data
     environment:
       - MYSQL_DATABASE
       - MYSQL_HOST
@@ -77,13 +77,6 @@ services:
       - 127.0.0.1:80:80
     networks:
       - back
-
-volumes:
-  db:
-  nextcloud:
-  apps:
-  config:
-  data:
 
 networks:
   back:
